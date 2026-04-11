@@ -210,7 +210,7 @@ function App() {
               </div>
             )}
             
-            {/* 正方形地图 - 宽度和高度都是120px */}
+            {/* 正方形地图 - 使用 OpenStreetMap 瓦片 */}
             {report.lat && (
               <div style={{display:'flex', justifyContent:'center', marginTop:12}}>
                 <div style={{height: 120, width: 120, borderRadius: 10, overflow: 'hidden'}}>
@@ -225,7 +225,7 @@ function App() {
                     dragging={false}
                     touchZoom={false}
                   >
-                    <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                     <Marker position={[report.lat, report.lng]}>
                       <Popup>{report.title}</Popup>
                     </Marker>
@@ -321,7 +321,7 @@ function App() {
                             attributionControl={false}
                             scrollWheelZoom={false}
                           >
-                            <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
+                            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                             <Marker position={[formData.lat, formData.lng]}>
                               <Popup>{formData.title || 'Selected location'}</Popup>
                             </Marker>
