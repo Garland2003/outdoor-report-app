@@ -30,14 +30,12 @@ function App() {
     setLocationText('Getting...');
     setLocationError('');
     
-    // 检查浏览器是否支持 Geolocation
     if (!navigator.geolocation) {
       setLocationError('Geolocation not supported');
       setLocationText('Not Supported');
       return;
     }
 
-    // 配置选项
     const options = {
       enableHighAccuracy: true,
       timeout: 10000,
@@ -46,7 +44,6 @@ function App() {
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        console.log('Location success:', pos.coords);
         setFormData({
           ...formData, 
           lat: pos.coords.latitude, 
@@ -56,7 +53,6 @@ function App() {
         setLocationError('');
       },
       (err) => {
-        console.error('Location error:', err);
         let errorMsg = '';
         switch(err.code) {
           case 1:
@@ -171,7 +167,6 @@ function App() {
 
   return (
     <div style={{background:'white', minHeight:'100vh', textAlign:'center'}}>
-      {/* 头部 */}
       <div style={{background:'white', color:'#1976d2', padding:'30px 20px', borderBottom:'1px solid #e0e0e0'}}>
         <h1 style={{margin:0, fontSize:28, fontWeight:'bold'}}>Outdoor Site Reports</h1>
         <p style={{margin:'12px 0 0', fontSize:14, color:'#666'}}>Record wildlife, damage, maintenance and more</p>
@@ -186,7 +181,6 @@ function App() {
         </button>
       </div>
 
-      {/* 统计卡片 */}
       <div style={{padding:'20px', background:'white'}}>
         <div style={{
           display: 'grid',
@@ -214,7 +208,6 @@ function App() {
         </div>
       </div>
 
-      {/* 报告列表 */}
       <div style={{padding:'0 16px 20px 16px', background:'white'}}>
         {reports.length === 0 && (
           <div style={{textAlign:'center', padding:60, background:'#fafafa', borderRadius:20, marginTop:10}}>
@@ -245,7 +238,7 @@ function App() {
               <div style={{fontSize:12, color:'#999', marginBottom:4}}>{report.timestamp}</div>
               {report.lat && (
                 <div style={{fontSize:12, color:'#999'}}>
-                  📍 {report.lat.toFixed(4)}, {report.lng.toFixed(4)}
+                  {report.lat.toFixed(4)}, {report.lng.toFixed(4)}
                 </div>
               )}
             </div>
@@ -262,7 +255,6 @@ function App() {
         ))}
       </div>
 
-      {/* 弹窗表单 */}
       {showForm && (
         <div style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000}}>
           <div style={{background:'white', borderRadius:28, maxWidth:500, width:'90%', maxHeight:'85%', overflow:'auto', padding:28, textAlign:'center'}}>
@@ -306,7 +298,6 @@ function App() {
                 </select>
               </div>
 
-              {/* DEVICE DATA 区域 */}
               <div style={{background:'#f5f5f5', borderRadius:20, padding:18, marginBottom:18}}>
                 <button type="button" onClick={getLocation} style={{background:'#1976d2', color:'white', border:'none', padding:'10px 24px', borderRadius:40, cursor:'pointer', fontSize:14, marginBottom:10}}>
                   {locationText}
@@ -318,13 +309,12 @@ function App() {
                 )}
                 {formData.lat && (
                   <div style={{background:'white', padding:12, borderRadius:12, fontSize:13, marginTop:10, color:'#555'}}>
-                    📍 {formData.lat.toFixed(6)}<br />
-                    📍 {formData.lng.toFixed(6)}
+                    {formData.lat.toFixed(6)}<br />
+                    {formData.lng.toFixed(6)}
                   </div>
                 )}
               </div>
 
-              {/* PHOTO 区域 */}
               <div style={{background:'#f5f5f5', borderRadius:20, padding:18, marginBottom:18}}>
                 <button type="button" onClick={takePhoto} style={{background:'#1976d2', color:'white', border:'none', padding:'10px 24px', borderRadius:40, cursor:'pointer', fontSize:14}}>
                   Take Photo
