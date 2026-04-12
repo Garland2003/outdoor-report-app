@@ -1,15 +1,4 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-
-// 修复 Leaflet 默认图标问题
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
 
 function App() {
   const [reports, setReports] = useState([]);
@@ -25,7 +14,7 @@ function App() {
     photo: null
   });
   const [locationText, setLocationText] = useState('Get Location');
-  const [showMap, setShowMap] = useState(false);
+  const [locationError, setLocationError] = useState('');
 
   useEffect(() => {
     const saved = localStorage.getItem('reports');
@@ -39,13 +28,53 @@ function App() {
 
   const getLocation = () => {
     setLocationText('Getting...');
+    setLocationError('');
+    
+    // 检查浏览器是否支持 Geolocation
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation not supported');
+      setLocationText('Not Supported');
+      return;
+    }
+
+    // 配置选项
+    const options = {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    };
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setFormData({...formData, lat: pos.coords.latitude, lng: pos.coords.longitude});
+        console.log('Location success:', pos.coords);
+        setFormData({
+          ...formData, 
+          lat: pos.coords.latitude, 
+          lng: pos.coords.longitude
+        });
         setLocationText(`${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`);
-        setShowMap(true);
+        setLocationError('');
       },
-      () => setLocationText('Failed')
+      (err) => {
+        console.error('Location error:', err);
+        let errorMsg = '';
+        switch(err.code) {
+          case 1:
+            errorMsg = 'Permission denied. Please allow location access.';
+            break;
+          case 2:
+            errorMsg = 'Position unavailable. Check GPS.';
+            break;
+          case 3:
+            errorMsg = 'Timeout. Please try again.';
+            break;
+          default:
+            errorMsg = 'Failed to get location.';
+        }
+        setLocationError(errorMsg);
+        setLocationText('Retry');
+      },
+      options
     );
   };
 
@@ -53,10 +82,14 @@ function App() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
+    input.capture = 'environment';
     input.onchange = (e) => {
-      const reader = new FileReader();
-      reader.onload = (event) => setFormData({...formData, photo: event.target.result});
-      reader.readAsDataURL(e.target.files[0]);
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => setFormData({...formData, photo: event.target.result});
+        reader.readAsDataURL(file);
+      }
     };
     input.click();
   };
@@ -82,7 +115,7 @@ function App() {
     setEditingId(null);
     setFormData({title:'', category:'wildlife', description:'', severity:'medium', lat:null, lng:null, photo:null});
     setLocationText('Get Location');
-    setShowMap(false);
+    setLocationError('');
   };
 
   const editReport = (report) => {
@@ -99,10 +132,8 @@ function App() {
     setShowForm(true);
     if (report.lat) {
       setLocationText(`${report.lat.toFixed(4)}, ${report.lng.toFixed(4)}`);
-      setShowMap(true);
     } else {
       setLocationText('Get Location');
-      setShowMap(false);
     }
   };
 
@@ -148,7 +179,7 @@ function App() {
           setEditingId(null);
           setFormData({title:'', category:'wildlife', description:'', severity:'medium', lat:null, lng:null, photo:null});
           setLocationText('Get Location');
-          setShowMap(false);
+          setLocationError('');
           setShowForm(true);
         }} style={{background:'#1976d2', color:'white', border:'none', padding:'12px 32px', borderRadius:40, fontWeight:'bold', fontSize:16, marginTop:25, cursor:'pointer'}}>
           New Report
@@ -210,35 +241,11 @@ function App() {
               </div>
             )}
             
-            {/* 正方形地图 - 使用 OpenStreetMap 瓦片 */}
-            {report.lat && (
-              <div style={{display:'flex', justifyContent:'center', marginTop:12}}>
-                <div style={{height: 120, width: 120, borderRadius: 10, overflow: 'hidden'}}>
-                  <MapContainer 
-                    center={[report.lat, report.lng]} 
-                    zoom={12} 
-                    style={{height: '100%', width: '100%'}}
-                    zoomControl={false}
-                    attributionControl={false}
-                    scrollWheelZoom={false}
-                    doubleClickZoom={false}
-                    dragging={false}
-                    touchZoom={false}
-                  >
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <Marker position={[report.lat, report.lng]}>
-                      <Popup>{report.title}</Popup>
-                    </Marker>
-                  </MapContainer>
-                </div>
-              </div>
-            )}
-            
             <div style={{marginTop:12}}>
               <div style={{fontSize:12, color:'#999', marginBottom:4}}>{report.timestamp}</div>
               {report.lat && (
                 <div style={{fontSize:12, color:'#999'}}>
-                  {report.lat.toFixed(4)}, {report.lng.toFixed(4)}
+                  📍 {report.lat.toFixed(4)}, {report.lng.toFixed(4)}
                 </div>
               )}
             </div>
@@ -264,7 +271,6 @@ function App() {
               <button onClick={() => {
                 setShowForm(false);
                 setEditingId(null);
-                setShowMap(false);
               }} style={{background:'#f0f0f0', border:'none', fontSize:18, width:36, height:36, borderRadius:25, cursor:'pointer'}}>✕</button>
             </div>
 
@@ -300,39 +306,25 @@ function App() {
                 </select>
               </div>
 
+              {/* DEVICE DATA 区域 */}
               <div style={{background:'#f5f5f5', borderRadius:20, padding:18, marginBottom:18}}>
                 <button type="button" onClick={getLocation} style={{background:'#1976d2', color:'white', border:'none', padding:'10px 24px', borderRadius:40, cursor:'pointer', fontSize:14, marginBottom:10}}>
                   {locationText}
                 </button>
+                {locationError && (
+                  <div style={{color:'#f44336', fontSize:12, marginTop:8}}>
+                    {locationError}
+                  </div>
+                )}
                 {formData.lat && (
-                  <>
-                    <div style={{background:'white', padding:12, borderRadius:12, fontSize:13, marginTop:10, color:'#555'}}>
-                      {formData.lat.toFixed(6)}<br />
-                      {formData.lng.toFixed(6)}
-                    </div>
-                    {showMap && (
-                      <div style={{display:'flex', justifyContent:'center', marginTop:10}}>
-                        <div style={{height: 140, width: 140, borderRadius: 12, overflow: 'hidden'}}>
-                          <MapContainer 
-                            center={[formData.lat, formData.lng]} 
-                            zoom={13} 
-                            style={{height: '100%', width: '100%'}}
-                            zoomControl={false}
-                            attributionControl={false}
-                            scrollWheelZoom={false}
-                          >
-                            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                            <Marker position={[formData.lat, formData.lng]}>
-                              <Popup>{formData.title || 'Selected location'}</Popup>
-                            </Marker>
-                          </MapContainer>
-                        </div>
-                      </div>
-                    )}
-                  </>
+                  <div style={{background:'white', padding:12, borderRadius:12, fontSize:13, marginTop:10, color:'#555'}}>
+                    📍 {formData.lat.toFixed(6)}<br />
+                    📍 {formData.lng.toFixed(6)}
+                  </div>
                 )}
               </div>
 
+              {/* PHOTO 区域 */}
               <div style={{background:'#f5f5f5', borderRadius:20, padding:18, marginBottom:18}}>
                 <button type="button" onClick={takePhoto} style={{background:'#1976d2', color:'white', border:'none', padding:'10px 24px', borderRadius:40, cursor:'pointer', fontSize:14}}>
                   Take Photo
