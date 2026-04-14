@@ -1,4 +1,15 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// 修复 Leaflet 默认图标问题
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 function App() {
   const [reports, setReports] = useState([]);
@@ -234,6 +245,30 @@ function App() {
               </div>
             )}
             
+            {/* 正方形地图 - 宽高都是150px */}
+            {report.lat && (
+              <div style={{display:'flex', justifyContent:'center', marginTop:12}}>
+                <div style={{height: 150, width: 150, borderRadius: 12, overflow: 'hidden'}}>
+                  <MapContainer 
+                    center={[report.lat, report.lng]} 
+                    zoom={13} 
+                    style={{height: '100%', width: '100%'}}
+                    zoomControl={false}
+                    attributionControl={false}
+                    scrollWheelZoom={false}
+                    doubleClickZoom={false}
+                    dragging={false}
+                    touchZoom={false}
+                  >
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    <Marker position={[report.lat, report.lng]}>
+                      <Popup>{report.title}</Popup>
+                    </Marker>
+                  </MapContainer>
+                </div>
+              </div>
+            )}
+            
             <div style={{marginTop:12}}>
               <div style={{fontSize:12, color:'#999', marginBottom:4}}>{report.timestamp}</div>
               {report.lat && (
@@ -308,10 +343,30 @@ function App() {
                   </div>
                 )}
                 {formData.lat && (
-                  <div style={{background:'white', padding:12, borderRadius:12, fontSize:13, marginTop:10, color:'#555'}}>
-                    {formData.lat.toFixed(6)}<br />
-                    {formData.lng.toFixed(6)}
-                  </div>
+                  <>
+                    <div style={{background:'white', padding:12, borderRadius:12, fontSize:13, marginTop:10, color:'#555'}}>
+                      {formData.lat.toFixed(6)}<br />
+                      {formData.lng.toFixed(6)}
+                    </div>
+                    {/* 表单内正方形地图预览 */}
+                    <div style={{display:'flex', justifyContent:'center', marginTop:10}}>
+                      <div style={{height: 150, width: 150, borderRadius: 12, overflow: 'hidden'}}>
+                        <MapContainer 
+                          center={[formData.lat, formData.lng]} 
+                          zoom={13} 
+                          style={{height: '100%', width: '100%'}}
+                          zoomControl={false}
+                          attributionControl={false}
+                          scrollWheelZoom={false}
+                        >
+                          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                          <Marker position={[formData.lat, formData.lng]}>
+                            <Popup>{formData.title || 'Selected location'}</Popup>
+                          </Marker>
+                        </MapContainer>
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
 
